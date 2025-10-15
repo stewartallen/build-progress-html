@@ -1,0 +1,15 @@
+# Dependencies
+node_modules/
+
+# Data files (large JSON)
+progress.json
+
+# Build artifacts
+dist/
+build/
+
+# Logs
+*.log
+
+# Claude Code settings
+.claude/

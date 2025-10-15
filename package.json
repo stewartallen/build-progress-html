@@ -1,0 +1,29 @@
+{
+    "name": "rv10-build-progress-html",
+    "version": "1.0.0",
+    "description": "RV-10 Build Progress Dashboard - Static HTML status page",
+    "private": true,
+    "scripts": {
+        "format": "prettier --write .",
+        "format:check": "prettier --check .",
+        "lint": "eslint '*.html'",
+        "lint:fix": "eslint --fix '*.html'",
+        "check": "npm run format:check && npm run lint",
+        "fix": "npm run format && npm run lint:fix",
+        "serve": "python3 -m http.server 8000"
+    },
+    "keywords": [
+        "rv-10",
+        "aircraft",
+        "build-tracker",
+        "dashboard"
+    ],
+    "author": "",
+    "license": "ISC",
+    "devDependencies": {
+        "eslint": "^8.57.0",
+        "eslint-config-prettier": "^9.1.0",
+        "eslint-plugin-html": "^8.1.3",
+        "prettier": "^3.2.5"
+    }
+}

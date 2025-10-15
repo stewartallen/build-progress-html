@@ -1,0 +1,9 @@
+# Dependencies
+node_modules/
+
+# Data files
+progress.json
+
+# Build artifacts
+dist/
+build/
