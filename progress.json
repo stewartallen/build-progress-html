@@ -5418,6 +5418,11 @@
     "est_completion_date_6_weeks": "2031-04-07",
     "hours_current_week": 0.0,
     "hours_current_month": 7.0,
-    "hours_last_30_days": 14.8
+    "hours_last_30_days": 14.8,
+    "current_streak": 0,
+    "record_streak": {
+      "days": 9,
+      "start_date": "2023-06-30"
+    }
   }
 }
