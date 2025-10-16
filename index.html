@@ -322,6 +322,16 @@
                     <div class="stat-value">${new Date(stats.est_completion_date_6_weeks).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</div>
                     <div class="stat-secondary">Based on recent pace</div>
                 </div>
+                <div class="stat-card">
+                    <div class="stat-label">Current Streak</div>
+                    <div class="stat-value">${stats.current_streak}</div>
+                    <div class="stat-secondary">${stats.current_streak === 1 ? 'day' : 'days'} worked consecutively</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Record Streak</div>
+                    <div class="stat-value">${stats.record_streak.days}</div>
+                    <div class="stat-secondary">${stats.record_streak.days === 1 ? 'day' : 'days'} starting ${new Date(stats.record_streak.start_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</div>
+                </div>
             `;
             }
 
