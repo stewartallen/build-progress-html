@@ -339,9 +339,10 @@
                 const container = document.getElementById('chart-container');
                 container.innerHTML = '';
 
-                // Render each year
+                // Render each year (newest first)
                 Object.keys(logByYear)
                     .sort()
+                    .reverse()
                     .forEach((year) => {
                         const yearSection = document.createElement('div');
                         yearSection.className = 'year-section';
