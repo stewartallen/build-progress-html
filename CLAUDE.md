@@ -115,6 +115,7 @@ Thresholds: `[0.1, 2, 4, 6, 8]`
 - Error handling for failed data loads
 - Custom legend showing color scale from less to more hours
 - Auto-refresh: Data automatically reloads every 15 minutes without page refresh
+- Mobile-responsive design with 4 breakpoints (desktop, tablet, phone, small phone)
 
 ### Technical Decisions
 
@@ -134,6 +135,13 @@ Thresholds: `[0.1, 2, 4, 6, 8]`
 - **Fetch API**: Standard browser API for loading JSON data
 - **No build step**: File can be served directly without compilation or bundling
 - **Custom Legend**: Using custom HTML/CSS legend displayed once at top for better layout control
+- **Mobile-Responsive CSS**: Media queries for 4 breakpoints without JavaScript
+    - Desktop (>1024px): Full layout with multi-column grid
+    - Tablet (≤1024px): Narrower grid columns (200px minimum)
+    - Phone (≤640px): Single column layout, reduced spacing and font sizes
+    - Small Phone (≤480px): Further reduced typography
+    - Landscape (≤768px): Two-column stats grid for better space utilization
+    - Chart containers allow horizontal scrolling on smaller screens
 
 ## Current Status
 
@@ -145,7 +153,7 @@ Thresholds: `[0.1, 2, 4, 6, 8]`
 - ✅ Interactive hover tooltips showing date and hours
 - ✅ Statistics dashboard with 8 metric cards (including streak tracking)
 - ✅ Dark theme dashboard design
-- ✅ Responsive layout
+- ✅ Mobile-responsive design (4 breakpoints: desktop/tablet/phone/small phone)
 - ✅ Error handling for data loading
 - ✅ Auto-refresh every 15 minutes
 - ✅ Ready for deployment on any static web server
@@ -235,6 +243,7 @@ Potential improvements:
 
 - [ ] Export chart as static image for ePaper display
 - [ ] Configurable color thresholds
-- [ ] Mobile-optimized responsive design
 - [ ] Additional chart views (weekly/monthly aggregation)
 - [ ] Configurable refresh interval (currently hardcoded to 15 minutes)
+- [ ] Adaptive chart sizing for mobile (JavaScript-based, show 3-6 months per chart on small screens)
+- [ ] Touch-optimized interactions (larger touch targets, tap instead of hover)

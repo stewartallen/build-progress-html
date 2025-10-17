@@ -240,6 +240,175 @@
                 border-radius: 6px;
                 margin: 20px 0;
             }
+
+            /* Mobile Responsive Design - Tablet and below */
+            @media (max-width: 1024px) {
+                .container {
+                    max-width: 100%;
+                }
+
+                .stats-grid {
+                    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                }
+            }
+
+            /* Mobile Responsive Design - Small tablets and large phones */
+            @media (max-width: 768px) {
+                body {
+                    padding: 15px;
+                }
+
+                header {
+                    margin-bottom: 30px;
+                }
+
+                h1 {
+                    font-size: 2em;
+                }
+
+                .subtitle {
+                    font-size: 1em;
+                }
+
+                .stats-grid {
+                    gap: 15px;
+                    margin-bottom: 30px;
+                }
+
+                .stat-card {
+                    padding: 15px;
+                }
+
+                .stat-value {
+                    font-size: 1.5em;
+                }
+
+                .year-header {
+                    font-size: 1.3em;
+                }
+
+                .chart-container {
+                    padding: 15px;
+                }
+
+                .chart-section {
+                    margin-top: 30px;
+                }
+
+                .year-section {
+                    margin-bottom: 30px;
+                }
+
+                .loading {
+                    padding: 30px;
+                    font-size: 1.1em;
+                }
+            }
+
+            /* Mobile Responsive Design - Phones */
+            @media (max-width: 640px) {
+                body {
+                    padding: 10px;
+                }
+
+                header {
+                    margin-bottom: 20px;
+                }
+
+                h1 {
+                    font-size: 1.75em;
+                }
+
+                .stats-grid {
+                    grid-template-columns: 1fr;
+                    gap: 12px;
+                    margin-bottom: 20px;
+                }
+
+                .stat-card {
+                    padding: 15px;
+                }
+
+                .stat-label {
+                    font-size: 0.8em;
+                }
+
+                .stat-value {
+                    font-size: 1.4em;
+                }
+
+                .stat-secondary {
+                    font-size: 0.85em;
+                }
+
+                .year-header {
+                    font-size: 1.2em;
+                    margin-bottom: 12px;
+                }
+
+                .chart-container {
+                    padding: 10px;
+                }
+
+                .chart-section {
+                    margin-top: 20px;
+                }
+
+                .year-section {
+                    margin-bottom: 25px;
+                }
+
+                .legend {
+                    font-size: 0.75em;
+                    gap: 6px;
+                    flex-wrap: wrap;
+                }
+
+                .legend-box {
+                    width: 10px;
+                    height: 10px;
+                }
+
+                .loading {
+                    padding: 20px;
+                    font-size: 1em;
+                }
+
+                .error {
+                    padding: 15px;
+                    font-size: 0.9em;
+                }
+            }
+
+            /* Mobile Responsive Design - Small phones */
+            @media (max-width: 480px) {
+                body {
+                    padding: 8px;
+                }
+
+                h1 {
+                    font-size: 1.5em;
+                }
+
+                .subtitle {
+                    font-size: 0.9em;
+                }
+
+                .stat-value {
+                    font-size: 1.3em;
+                }
+
+                .year-header {
+                    font-size: 1.1em;
+                }
+            }
+
+            /* Landscape orientation on mobile */
+            @media (max-width: 768px) and (orientation: landscape) {
+                .stats-grid {
+                    grid-template-columns: repeat(2, 1fr);
+                }
+            }
         </style>
     </head>
     <body>
