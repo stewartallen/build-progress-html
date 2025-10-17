@@ -5407,6 +5407,14 @@
     {
       "date": "2025-10-15",
       "hours": 0.0
+    },
+    {
+      "date": "2025-10-16",
+      "hours": 0.0
+    },
+    {
+      "date": "2025-10-17",
+      "hours": 0.0
     }
   ],
   "statistics": {
@@ -5414,8 +5422,8 @@
     "days_worked": 473,
     "avg_hours_per_week": 7.9,
     "avg_hours_last_6_weeks": 3.4,
-    "est_completion_date": "2028-02-21",
-    "est_completion_date_6_weeks": "2031-04-07",
+    "est_completion_date": "2028-02-25",
+    "est_completion_date_6_weeks": "2031-04-09",
     "hours_current_week": 0.0,
     "hours_current_month": 7.0,
     "hours_last_30_days": 14.8,

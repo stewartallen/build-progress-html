@@ -9,6 +9,11 @@
         "ecmaVersion": "latest",
         "sourceType": "script"
     },
+    "globals": {
+        "CalHeatmap": "readonly",
+        "Tooltip": "readonly",
+        "CalendarLabel": "readonly"
+    },
     "rules": {
         "no-unused-vars": "warn",
         "no-console": "off"

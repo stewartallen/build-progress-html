@@ -4,6 +4,10 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>RV-10 Build Progress</title>
+
+        <!-- Cal-Heatmap CSS -->
+        <link rel="stylesheet" href="https://unpkg.com/cal-heatmap@4.2.4/dist/cal-heatmap.css" />
+
         <style>
             * {
                 margin: 0;
@@ -159,7 +163,7 @@
 
             /* Color scale for hours worked */
             .level-0 {
-                background-color: #151b23;
+                background-color: #30363d;
             }
             .level-1 {
                 background-color: #0e4429;
@@ -242,7 +246,6 @@
         <div class="container">
             <header>
                 <h1>RV-10 Build Progress</h1>
-                <p class="subtitle">Aircraft Kit Construction Tracker</p>
             </header>
 
             <div id="stats-container" class="stats-grid">
@@ -256,33 +259,18 @@
 
         <div id="tooltip" class="tooltip"></div>
 
+        <!-- Cal-Heatmap JavaScript (v4) - CDN installation per official docs -->
+        <script src="https://d3js.org/d3.v7.min.js"></script>
+        <script src="https://unpkg.com/cal-heatmap/dist/cal-heatmap.min.js"></script>
+        <script src="https://unpkg.com/@popperjs/core@2"></script>
+        <script src="https://unpkg.com/cal-heatmap/dist/plugins/Tooltip.min.js"></script>
+        <script src="https://unpkg.com/cal-heatmap/dist/plugins/CalendarLabel.min.js"></script>
+
         <script>
+
             const DATA_FILE = 'progress.json';
 
-            // Color level thresholds (hours per day)
-            const COLOR_THRESHOLDS = [0, 2, 4, 6, 8];
-
-            function getColorLevel(hours) {
-                if (hours === 0) return 0;
-                if (hours < COLOR_THRESHOLDS[1]) return 1;
-                if (hours < COLOR_THRESHOLDS[2]) return 2;
-                if (hours < COLOR_THRESHOLDS[3]) return 3;
-                return 4;
-            }
-
-            function formatDate(dateStr) {
-                const date = new Date(dateStr);
-                return date.toLocaleDateString('en-US', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                });
-            }
-
-            function formatHours(hours) {
-                return hours === 1 ? '1 hour' : `${hours} hours`;
-            }
+            console.log('Modules loaded successfully');
 
             function renderStatistics(stats) {
                 const container = document.getElementById('stats-container');
@@ -349,6 +337,23 @@
                 const container = document.getElementById('chart-container');
                 container.innerHTML = '';
 
+                // Add legend once at the top
+                const legend = document.createElement('div');
+                legend.className = 'legend';
+                legend.style.marginBottom = '20px';
+                legend.innerHTML = `
+                    <span>Less</span>
+                    <div class="legend-scale">
+                        <div class="legend-box level-0"></div>
+                        <div class="legend-box level-1"></div>
+                        <div class="legend-box level-2"></div>
+                        <div class="legend-box level-3"></div>
+                        <div class="legend-box level-4"></div>
+                    </div>
+                    <span>More</span>
+                `;
+                container.appendChild(legend);
+
                 // Render each year (newest first)
                 Object.keys(logByYear)
                     .sort()
@@ -363,192 +368,91 @@
 
                         const chartContainer = document.createElement('div');
                         chartContainer.className = 'chart-container';
+                        chartContainer.id = `cal-heatmap-${year}`;
 
-                        // Get first and last date of year
-                        const yearEntries = logByYear[year];
-                        const firstDate = new Date(yearEntries[0].date);
-                        const lastDate = new Date(yearEntries[yearEntries.length - 1].date);
-
-                        // Create a map for quick lookup
-                        const hoursMap = {};
-                        yearEntries.forEach((entry) => {
-                            hoursMap[entry.date] = entry.hours;
-                        });
-
-                        // Start from the first Sunday on or before the first date
-                        const startDate = new Date(firstDate);
-                        startDate.setDate(startDate.getDate() - startDate.getDay());
-
-                        // End at the last Saturday on or after the last date
-                        const endDate = new Date(lastDate);
-                        endDate.setDate(endDate.getDate() + (6 - endDate.getDay()));
-
-                        // Create chart wrapper with labels
-                        const chartWrapper = document.createElement('div');
-                        chartWrapper.className = 'chart-wrapper';
-
-                        // Create day labels (Mon, Wed, Fri)
-                        const dayLabels = document.createElement('div');
-                        dayLabels.className = 'day-labels';
-                        const dayNames = ['', 'Mon', '', 'Wed', '', 'Fri', ''];
-                        dayNames.forEach((name) => {
-                            const label = document.createElement('div');
-                            label.className = 'day-label';
-                            label.textContent = name;
-                            dayLabels.appendChild(label);
-                        });
-
-                        // Create grid container
-                        const gridContainer = document.createElement('div');
-                        gridContainer.className = 'grid-container';
-
-                        // Create month labels
-                        const monthLabels = document.createElement('div');
-                        monthLabels.className = 'month-labels';
-
-                        // Track months for labels
-                        const monthNames = [
-                            'Jan',
-                            'Feb',
-                            'Mar',
-                            'Apr',
-                            'May',
-                            'Jun',
-                            'Jul',
-                            'Aug',
-                            'Sep',
-                            'Oct',
-                            'Nov',
-                            'Dec',
-                        ];
-                        let lastMonth = -1;
-                        let weekCount = 0;
-
-                        // Calculate total weeks
-                        const tempDate = new Date(startDate);
-                        let totalWeeks = 0;
-                        while (tempDate <= endDate) {
-                            totalWeeks++;
-                            tempDate.setDate(tempDate.getDate() + 7);
-                        }
-
-                        // Build month label positions with week counts
-                        const monthPositions = [];
-                        tempDate.setTime(startDate.getTime());
-                        weekCount = 0;
-                        while (weekCount < totalWeeks) {
-                            const month = tempDate.getMonth();
-                            if (month !== lastMonth) {
-                                monthPositions.push({
-                                    startWeek: weekCount,
-                                    month: month,
-                                    weeks: 0,
-                                });
-                                lastMonth = month;
-                            }
-                            if (monthPositions.length > 0) {
-                                monthPositions[monthPositions.length - 1].weeks++;
-                            }
-                            weekCount++;
-                            tempDate.setDate(tempDate.getDate() + 7);
-                        }
-
-                        // Create month label elements with proper widths
-                        monthPositions.forEach((pos) => {
-                            const label = document.createElement('div');
-                            label.className = 'month-label';
-                            // Width = (weeks * 12px cell) + ((weeks - 1) * 3px gap)
-                            const width = pos.weeks * 12 + (pos.weeks - 1) * 3;
-                            label.style.width = width + 'px';
-                            label.textContent = monthNames[pos.month];
-                            monthLabels.appendChild(label);
-                        });
-
-                        gridContainer.appendChild(monthLabels);
-
-                        // Create contribution grid
-                        const grid = document.createElement('div');
-                        grid.className = 'contribution-grid';
-
-                        // Generate all days
-                        const currentDate = new Date(startDate);
-                        while (currentDate <= endDate) {
-                            const dateStr = currentDate.toISOString().split('T')[0];
-                            const hours = hoursMap[dateStr] || 0;
-                            const level = getColorLevel(hours);
-
-                            const cell = document.createElement('div');
-                            cell.className = `day-cell level-${level}`;
-                            cell.dataset.date = dateStr;
-                            cell.dataset.hours = hours;
-
-                            // Tooltip event handlers
-                            cell.addEventListener('mouseenter', showTooltip);
-                            cell.addEventListener('mouseleave', hideTooltip);
-                            cell.addEventListener('mousemove', moveTooltip);
-
-                            grid.appendChild(cell);
-                            currentDate.setDate(currentDate.getDate() + 1);
-                        }
-
-                        gridContainer.appendChild(grid);
-                        chartWrapper.appendChild(dayLabels);
-                        chartWrapper.appendChild(gridContainer);
-
-                        // Add legend
-                        const legend = document.createElement('div');
-                        legend.className = 'legend';
-                        legend.innerHTML = `
-                    <span>Less</span>
-                    <div class="legend-scale">
-                        <div class="legend-box level-0"></div>
-                        <div class="legend-box level-1"></div>
-                        <div class="legend-box level-2"></div>
-                        <div class="legend-box level-3"></div>
-                        <div class="legend-box level-4"></div>
-                    </div>
-                    <span>More</span>
-                `;
-
-                        chartContainer.appendChild(chartWrapper);
-                        chartContainer.appendChild(legend);
                         yearSection.appendChild(yearHeader);
                         yearSection.appendChild(chartContainer);
                         container.appendChild(yearSection);
+
+                        // Initialize cal-heatmap for this year (GitHub style)
+                        const cal = new CalHeatmap();
+                        cal.paint(
+                            {
+                                itemSelector: `#cal-heatmap-${year}`,
+                                data: {
+                                    source: logByYear[year],
+                                    x: 'date',
+                                    y: 'hours',
+                                    defaultValue: 0
+                                },
+                                date: {
+                                    start: new Date(parseInt(year), 0, 1),
+                                },
+                                range: 12,
+                                scale: {
+                                    color: {
+                                        type: 'threshold',
+                                        range: [
+                                            '#30363d',
+                                            '#0e4429',
+                                            '#006d32',
+                                            '#26a641',
+                                            '#39d353',
+                                        ],
+                                        domain: [0.1, 2, 4, 6, 8],
+                                    },
+                                },
+                                domain: {
+                                    type: 'month',
+                                    gutter: 6,
+                                    label: { text: 'MMM', textAlign: 'start', position: 'top' },
+                                },
+                                subDomain: {
+                                    type: 'ghDay',
+                                    radius: 2,
+                                    width: 18,
+                                    height: 18,
+                                    gutter: 6,
+                                },
+                            },
+                            [
+                                [
+                                    Tooltip,
+                                    {
+                                        text: function (date, value, dayjsDate) {
+                                            return (
+                                                (value
+                                                    ? value + (value === 1 ? ' hour' : ' hours')
+                                                    : '0 hours') +
+                                                ' on ' +
+                                                dayjsDate.format('dddd, MMMM D, YYYY')
+                                            );
+                                        },
+                                    },
+                                ],
+                                [
+                                    CalendarLabel,
+                                    {
+                                        width: 30,
+                                        textAlign: 'start',
+                                        text: () => dayjs.weekdaysShort().map((d, i) => (i % 2 == 0 ? '' : d)),
+                                        padding: [25, 0, 0, 0],
+                                    },
+                                ],
+                            ]
+                        );
                     });
-            }
-
-            function showTooltip(event) {
-                const tooltip = document.getElementById('tooltip');
-                const date = event.target.dataset.date;
-                const hours = parseFloat(event.target.dataset.hours);
-
-                tooltip.innerHTML = `
-                <div class="tooltip-date">${formatDate(date)}</div>
-                <div class="tooltip-hours">${formatHours(hours)}</div>
-            `;
-                tooltip.style.display = 'block';
-                moveTooltip(event);
-            }
-
-            function hideTooltip() {
-                const tooltip = document.getElementById('tooltip');
-                tooltip.style.display = 'none';
-            }
-
-            function moveTooltip(event) {
-                const tooltip = document.getElementById('tooltip');
-                tooltip.style.left = event.clientX + 15 + 'px';
-                tooltip.style.top = event.clientY + 15 + 'px';
             }
 
             async function loadData() {
                 try {
+                    console.log('Loading data from', DATA_FILE);
                     const response = await fetch(DATA_FILE);
                     if (!response.ok) {
                         throw new Error(`Failed to load ${DATA_FILE}: ${response.statusText}`);
                     }
                     const data = await response.json();
+                    console.log('Data loaded successfully', data);
 
                     renderStatistics(data.statistics);
                     renderChart(data.log);
@@ -564,7 +468,12 @@
             }
 
             // Load data when page loads
-            loadData();
+            try {
+                console.log('Starting to load data...');
+                loadData();
+            } catch (error) {
+                console.error('Error in main execution:', error);
+            }
         </script>
     </body>
 </html>
