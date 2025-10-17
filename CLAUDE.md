@@ -114,6 +114,7 @@ Thresholds: `[0.1, 2, 4, 6, 8]`
 - Responsive grid layout for statistics cards
 - Error handling for failed data loads
 - Custom legend showing color scale from less to more hours
+- Auto-refresh: Data automatically reloads every 15 minutes without page refresh
 
 ### Technical Decisions
 
@@ -146,6 +147,7 @@ Thresholds: `[0.1, 2, 4, 6, 8]`
 - ✅ Dark theme dashboard design
 - ✅ Responsive layout
 - ✅ Error handling for data loading
+- ✅ Auto-refresh every 15 minutes
 - ✅ Ready for deployment on any static web server
 
 ## Code Quality & Formatting
@@ -231,8 +233,8 @@ Replace `progress.json` with newly generated data from `build-progress-cli`. The
 
 Potential improvements:
 
-- [ ] Auto-refresh functionality to reload data periodically
 - [ ] Export chart as static image for ePaper display
 - [ ] Configurable color thresholds
 - [ ] Mobile-optimized responsive design
 - [ ] Additional chart views (weekly/monthly aggregation)
+- [ ] Configurable refresh interval (currently hardcoded to 15 minutes)

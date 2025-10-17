@@ -474,6 +474,12 @@
             } catch (error) {
                 console.error('Error in main execution:', error);
             }
+
+            // Auto-refresh data every 15 minutes (900000 milliseconds)
+            setInterval(() => {
+                console.log('Auto-refreshing data...');
+                loadData();
+            }, 15 * 60 * 1000);
         </script>
     </body>
 </html>
