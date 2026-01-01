@@ -12,7 +12,8 @@
     "globals": {
         "CalHeatmap": "readonly",
         "Tooltip": "readonly",
-        "CalendarLabel": "readonly"
+        "CalendarLabel": "readonly",
+        "dayjs": "readonly"
     },
     "rules": {
         "no-unused-vars": "warn",

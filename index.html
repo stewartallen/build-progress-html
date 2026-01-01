@@ -100,7 +100,7 @@
                 border: 1px solid #30363d;
                 border-radius: 6px;
                 padding: 20px;
-                overflow-x: auto;
+                overflow-x: hidden;
             }
 
             .chart-wrapper {
@@ -289,6 +289,7 @@
 
                 .chart-container {
                     padding: 15px;
+                    overflow-x: auto;
                 }
 
                 .chart-section {
@@ -436,10 +437,52 @@
         <script src="https://unpkg.com/cal-heatmap/dist/plugins/CalendarLabel.min.js"></script>
 
         <script>
-
             const DATA_FILE = 'progress.json';
 
             console.log('Modules loaded successfully');
+
+            // Helper function to hide cells outside year boundaries after rendering
+            function hideOutOfYearCells(year) {
+                // Use UTC to match how Cal-Heatmap parses ISO date strings
+                const yearStart = Date.UTC(year, 0, 1);
+                const yearEnd = Date.UTC(year, 11, 31, 23, 59, 59, 999);
+
+                // Wait for rendering to complete
+                setTimeout(() => {
+                    const container = document.getElementById(`cal-heatmap-${year}`);
+                    if (!container) return;
+
+                    // Find all subdomain cells (day cells)
+                    const cells = container.querySelectorAll('.ch-subdomain-bg');
+                    if (!cells || cells.length === 0) return;
+
+                    cells.forEach((cell) => {
+                        const parent = cell.parentElement;
+
+                        // Get timestamp from D3 data (Cal-Heatmap uses D3 internally)
+                        let timestamp = null;
+                        if (cell.__data__ && cell.__data__.t) {
+                            timestamp = cell.__data__.t;
+                        } else if (parent && parent.__data__ && parent.__data__.t) {
+                            timestamp = parent.__data__.t;
+                        }
+
+                        if (!timestamp) return;
+
+                        // Hide cells outside the year range, unhide cells within range
+                        const isOutOfRange = timestamp < yearStart || timestamp > yearEnd;
+                        const visibility = isOutOfRange ? 'hidden' : 'visible';
+                        const pointerEvents = isOutOfRange ? 'none' : 'auto';
+
+                        if (parent) {
+                            parent.style.visibility = visibility;
+                            parent.style.pointerEvents = pointerEvents;
+                        }
+                        cell.style.visibility = visibility;
+                        cell.style.pointerEvents = pointerEvents;
+                    });
+                }, 100);
+            }
 
             function renderStatistics(stats) {
                 const container = document.getElementById('stats-container');
@@ -545,6 +588,7 @@
 
                         // Initialize cal-heatmap for this year (GitHub style)
                         const cal = new CalHeatmap();
+
                         cal.paint(
                             {
                                 itemSelector: `#cal-heatmap-${year}`,
@@ -552,12 +596,12 @@
                                     source: logByYear[year],
                                     x: 'date',
                                     y: 'hours',
-                                    defaultValue: 0
+                                    defaultValue: 0,
                                 },
                                 date: {
                                     start: new Date(parseInt(year), 0, 1),
                                 },
-                                range: 12,
+                                range: 13,
                                 scale: {
                                     color: {
                                         type: 'threshold',
@@ -604,12 +648,18 @@
                                     {
                                         width: 30,
                                         textAlign: 'start',
-                                        text: () => dayjs.weekdaysShort().map((d, i) => (i % 2 == 0 ? '' : d)),
+                                        text: () =>
+                                            dayjs
+                                                .weekdaysShort()
+                                                .map((d, i) => (i % 2 == 0 ? '' : d)),
                                         padding: [25, 0, 0, 0],
                                     },
                                 ],
                             ]
                         );
+
+                        // Hide cells outside the year boundaries
+                        hideOutOfYearCells(parseInt(year));
                     });
             }
 
@@ -645,10 +695,13 @@
             }
 
             // Auto-refresh data every 15 minutes (900000 milliseconds)
-            setInterval(() => {
-                console.log('Auto-refreshing data...');
-                loadData();
-            }, 15 * 60 * 1000);
+            setInterval(
+                () => {
+                    console.log('Auto-refreshing data...');
+                    loadData();
+                },
+                15 * 60 * 1000
+            );
         </script>
     </body>
 </html>

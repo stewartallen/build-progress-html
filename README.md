@@ -44,26 +44,26 @@ The dashboard reads `progress.json` with the following structure:
 
 ```json
 {
-  "log": [
-    { "date": "2022-02-02", "hours": 4.4 },
-    { "date": "2022-02-03", "hours": 0.0 }
-  ],
-  "statistics": {
-    "total_hours": 1528.4,
-    "days_worked": 473,
-    "avg_hours_per_week": 7.9,
-    "avg_hours_last_6_weeks": 3.4,
-    "est_completion_date": "2028-02-21",
-    "est_completion_date_6_weeks": "2031-04-07",
-    "hours_current_week": 0.0,
-    "hours_current_month": 7.0,
-    "hours_last_30_days": 14.8,
-    "current_streak": 0,
-    "record_streak": {
-      "days": 9,
-      "start_date": "2023-06-30"
+    "log": [
+        { "date": "2022-02-02", "hours": 4.4 },
+        { "date": "2022-02-03", "hours": 0.0 }
+    ],
+    "statistics": {
+        "total_hours": 1528.4,
+        "days_worked": 473,
+        "avg_hours_per_week": 7.9,
+        "avg_hours_last_6_weeks": 3.4,
+        "est_completion_date": "2028-02-21",
+        "est_completion_date_6_weeks": "2031-04-07",
+        "hours_current_week": 0.0,
+        "hours_current_month": 7.0,
+        "hours_last_30_days": 14.8,
+        "current_streak": 0,
+        "record_streak": {
+            "days": 9,
+            "start_date": "2023-06-30"
+        }
     }
-  }
 }
 ```
 
@@ -176,6 +176,7 @@ Charts support horizontal scrolling on smaller screens.
 ## Browser Compatibility
 
 Works in all modern browsers that support:
+
 - ES2021 JavaScript
 - Fetch API
 - CSS Grid
