@@ -1,707 +1,867 @@
 <!doctype html>
 <html lang="en">
     <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta
+            name="description"
+            content="Construction progress for an RV-10 aircraft kit: daily build hours, streaks and completion estimates."
+        />
+        <meta name="color-scheme" content="light dark" />
+        <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+        <meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)" />
         <title>RV-10 Build Progress</title>
-
-        <!-- Cal-Heatmap CSS -->
-        <link rel="stylesheet" href="https://unpkg.com/cal-heatmap@4.2.4/dist/cal-heatmap.css" />
+        <!-- RV-10 plan view: cowl and cabin, constant-chord wing with raked
+             tips, tapered tail cone, square-tipped stabilizer. -->
+        <link
+            rel="icon"
+            type="image/svg+xml"
+            href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230d1117'/><g fill='%2339d353'><path d='M16 3.1C17.8 4.1 18.6 5.5 18.6 7.6V14.6L16.85 27.9H15.15L13.4 14.6V7.6C13.4 5.5 14.2 4.1 16 3.1Z'/><path d='M3 10.2H29L30.8 11V14.8L29 15.6H3L1.2 14.8V11Z'/><path d='M9.6 24.2H22.4V27.4H9.6Z'/></g></svg>"
+        />
 
         <style>
-            * {
-                margin: 0;
-                padding: 0;
+            /* ---------------------------------------------------------------
+               Design tokens. Light is the base; dark overrides below. Every
+               colour lives here so the palette has exactly one home.
+               --------------------------------------------------------------- */
+            :root {
+                color-scheme: light dark;
+
+                --bg: #ffffff;
+                --surface: #f6f8fa;
+                --border: #d0d7de;
+                --text: #1f2328;
+                --text-strong: #010409;
+                --text-muted: #59636e;
+                --accent: #0969da;
+                --danger: #cf222e;
+                --danger-text: #ffffff;
+                --tooltip-bg: #24292f;
+                --tooltip-text: #ffffff;
+                --shadow: 0 8px 24px rgb(31 35 40 / 12%);
+
+                /* GitHub contribution scale, light variant. */
+                --level-0: #ebedf0;
+                --level-1: #9be9a8;
+                --level-2: #40c463;
+                --level-3: #30a14e;
+                --level-4: #216e39;
+                --cell-stroke: rgb(27 31 35 / 6%);
+
+                --radius: 6px;
+                --gap: clamp(0.75rem, 2vw, 1.25rem);
+            }
+
+            @media (prefers-color-scheme: dark) {
+                :root {
+                    --bg: #0d1117;
+                    --surface: #161b22;
+                    --border: #30363d;
+                    --text: #c9d1d9;
+                    --text-strong: #f0f6fc;
+                    --text-muted: #8b949e;
+                    --accent: #58a6ff;
+                    --danger: #f85149;
+                    --tooltip-bg: #1c2128;
+                    --shadow: 0 8px 24px rgb(1 4 9 / 40%);
+
+                    /* GitHub contribution scale, dark variant. */
+                    --level-0: #30363d;
+                    --level-1: #0e4429;
+                    --level-2: #006d32;
+                    --level-3: #26a641;
+                    --level-4: #39d353;
+                    --cell-stroke: rgb(255 255 255 / 5%);
+                }
+            }
+
+            /* --------------------------------------------------------------- */
+
+            *,
+            *::before,
+            *::after {
                 box-sizing: border-box;
             }
 
+            :where(body, h1, h2, h3, p, dl, dd, figure) {
+                margin: 0;
+            }
+
             body {
+                padding: clamp(0.75rem, 2.5vw, 1.5rem);
+                background-color: var(--bg);
+                color: var(--text);
                 font-family:
-                    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
-                    Cantarell, sans-serif;
-                background-color: #0d1117;
-                color: #c9d1d9;
-                padding: 20px;
+                    system-ui,
+                    -apple-system,
+                    'Segoe UI',
+                    Roboto,
+                    sans-serif;
                 line-height: 1.6;
+                -webkit-text-size-adjust: 100%;
             }
 
-            .container {
-                max-width: 1400px;
-                margin: 0 auto;
+            .page {
+                max-inline-size: 1400px;
+                margin-inline: auto;
             }
 
-            header {
-                margin-bottom: 40px;
+            .page > * + * {
+                margin-block-start: clamp(1.5rem, 4vw, 2.5rem);
             }
 
             h1 {
-                font-size: 2.5em;
+                font-size: clamp(1.5rem, 1.1rem + 2vw, 2.5rem);
                 font-weight: 600;
-                margin-bottom: 10px;
-                color: #f0f6fc;
+                line-height: 1.2;
+                letter-spacing: -0.02em;
+                color: var(--text-strong);
             }
 
-            .subtitle {
-                font-size: 1.1em;
-                color: #8b949e;
+            h2 {
+                font-size: clamp(1.05rem, 0.95rem + 0.5vw, 1.35rem);
+                font-weight: 600;
+                color: var(--text-strong);
             }
 
-            .stats-grid {
+            .sr-only {
+                position: absolute;
+                inline-size: 1px;
+                block-size: 1px;
+                padding: 0;
+                margin: -1px;
+                overflow: hidden;
+                clip-path: inset(50%);
+                white-space: nowrap;
+                border: 0;
+            }
+
+            /* Status line: doubles as the loading message and the error banner. */
+            .status {
+                margin-block-start: 0.4rem;
+                font-size: 0.9375rem;
+                color: var(--text-muted);
+            }
+
+            .status[data-state='error'] {
+                padding: 0.75rem 1rem;
+                border-radius: var(--radius);
+                background-color: var(--danger);
+                color: var(--danger-text);
+            }
+
+            /* Statistics --------------------------------------------------- */
+
+            .stats {
                 display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-                gap: 20px;
-                margin-bottom: 40px;
+                /* min() lets cards go full width on phones without a breakpoint. */
+                grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+                gap: var(--gap);
             }
 
-            .stat-card {
-                background-color: #161b22;
-                border: 1px solid #30363d;
-                border-radius: 6px;
-                padding: 20px;
+            .stat {
+                padding: clamp(0.9rem, 2vw, 1.25rem);
+                border: 1px solid var(--border);
+                border-radius: var(--radius);
+                background-color: var(--surface);
             }
 
-            .stat-label {
-                font-size: 0.875em;
-                color: #8b949e;
-                margin-bottom: 8px;
+            .stat__label {
+                font-size: 0.8125rem;
                 text-transform: uppercase;
-                letter-spacing: 0.5px;
+                letter-spacing: 0.05em;
+                color: var(--text-muted);
             }
 
-            .stat-value {
-                font-size: 1.8em;
-                font-weight: 600;
-                color: #58a6ff;
-            }
-
-            .stat-secondary {
-                font-size: 0.9em;
-                color: #8b949e;
-                margin-top: 4px;
-            }
-
-            .chart-section {
-                margin-top: 40px;
-            }
-
-            .year-section {
-                margin-bottom: 40px;
-            }
-
-            .year-header {
-                font-size: 1.5em;
-                font-weight: 600;
-                margin-bottom: 15px;
-                color: #f0f6fc;
-            }
-
-            .chart-container {
-                background-color: #161b22;
-                border: 1px solid #30363d;
-                border-radius: 6px;
-                padding: 20px;
-                overflow-x: hidden;
-            }
-
-            .chart-wrapper {
-                display: flex;
-                gap: 10px;
-                margin-top: 10px;
-            }
-
-            .day-labels {
+            .stat__body {
                 display: flex;
                 flex-direction: column;
-                gap: 3px;
-                padding-top: 20px;
-                font-size: 0.7em;
-                color: #8b949e;
+                margin-block-start: 0.4rem;
             }
 
-            .day-label {
-                height: 12px;
-                line-height: 12px;
+            .stat__value {
+                font-size: clamp(1.3rem, 1.05rem + 0.9vw, 1.8rem);
+                font-weight: 600;
+                line-height: 1.25;
+                font-variant-numeric: tabular-nums;
+                color: var(--accent);
             }
 
-            .grid-container {
-                flex: 1;
+            .stat__note {
+                font-size: 0.875rem;
+                color: var(--text-muted);
             }
 
-            .month-labels {
+            /* Activity heatmap --------------------------------------------- */
+
+            .section-head {
                 display: flex;
-                margin-bottom: 5px;
-                font-size: 0.7em;
-                color: #8b949e;
-                height: 15px;
-            }
-
-            .month-label {
-                text-align: left;
-                padding-left: 2px;
-                flex-shrink: 0;
-            }
-
-            .contribution-grid {
-                display: grid;
-                grid-template-rows: repeat(7, 12px);
-                grid-auto-flow: column;
-                gap: 3px;
-            }
-
-            .day-cell {
-                width: 12px;
-                height: 12px;
-                border-radius: 2px;
-                cursor: pointer;
-                transition: transform 0.1s ease;
-            }
-
-            .day-cell:hover {
-                transform: scale(1.5);
-                border: 1px solid #8b949e;
-            }
-
-            /* Color scale for hours worked */
-            .level-0 {
-                background-color: #30363d;
-            }
-            .level-1 {
-                background-color: #0e4429;
-            }
-            .level-2 {
-                background-color: #006d32;
-            }
-            .level-3 {
-                background-color: #26a641;
-            }
-            .level-4 {
-                background-color: #39d353;
+                flex-wrap: wrap;
+                align-items: baseline;
+                justify-content: space-between;
+                gap: 0.5rem 1rem;
+                margin-block-end: 1rem;
             }
 
             .legend {
                 display: flex;
                 align-items: center;
-                gap: 8px;
-                margin-top: 15px;
-                font-size: 0.85em;
-                color: #8b949e;
+                gap: 0.5rem;
+                font-size: 0.8125rem;
+                color: var(--text-muted);
             }
 
-            .legend-item {
-                display: flex;
-                align-items: center;
-                gap: 4px;
-            }
-
-            .legend-scale {
+            .legend__scale {
                 display: flex;
                 gap: 3px;
             }
 
-            .legend-box {
-                width: 12px;
-                height: 12px;
+            .legend__swatch {
+                inline-size: 12px;
+                block-size: 12px;
                 border-radius: 2px;
+                background-color: var(--level-0);
+                box-shadow: inset 0 0 0 1px var(--cell-stroke);
             }
+
+            .legend__swatch[data-level='1'] {
+                background-color: var(--level-1);
+            }
+            .legend__swatch[data-level='2'] {
+                background-color: var(--level-2);
+            }
+            .legend__swatch[data-level='3'] {
+                background-color: var(--level-3);
+            }
+            .legend__swatch[data-level='4'] {
+                background-color: var(--level-4);
+            }
+
+            .years {
+                display: flex;
+                flex-direction: column;
+                gap: clamp(1.25rem, 3vw, 2rem);
+            }
+
+            .year__title {
+                margin-block-end: 0.6rem;
+                font-size: clamp(1rem, 0.9rem + 0.4vw, 1.25rem);
+                font-weight: 600;
+                color: var(--text-strong);
+            }
+
+            .year__chart {
+                padding: clamp(0.75rem, 2vw, 1.25rem);
+                border: 1px solid var(--border);
+                border-radius: var(--radius);
+                background-color: var(--surface);
+                /* Below the SVG's min-width the chart scrolls instead of
+                   shrinking cells into unreadable dots. */
+                overflow-x: auto;
+                overscroll-behavior-x: contain;
+                scrollbar-width: thin;
+            }
+
+            .heatmap {
+                display: block;
+                inline-size: 100%;
+                block-size: auto;
+            }
+
+            .heatmap text {
+                font-size: 11px;
+                fill: var(--text-muted);
+            }
+
+            .heatmap .day {
+                fill: var(--level-0);
+                stroke: var(--cell-stroke);
+                stroke-width: 1;
+                transition: stroke 100ms ease;
+            }
+
+            .heatmap .day[data-level='1'] {
+                fill: var(--level-1);
+            }
+            .heatmap .day[data-level='2'] {
+                fill: var(--level-2);
+            }
+            .heatmap .day[data-level='3'] {
+                fill: var(--level-3);
+            }
+            .heatmap .day[data-level='4'] {
+                fill: var(--level-4);
+            }
+
+            .heatmap .day:hover {
+                stroke: var(--text-strong);
+                stroke-width: 1.5;
+            }
+
+            /* Tooltip ------------------------------------------------------ */
 
             .tooltip {
                 position: fixed;
-                background-color: #1c2128;
-                border: 1px solid #30363d;
-                border-radius: 6px;
-                padding: 8px 12px;
+                inset-block-start: 0;
+                inset-inline-start: 0;
+                z-index: 10;
+                max-inline-size: 18rem;
+                padding: 0.35rem 0.6rem;
+                border-radius: var(--radius);
+                background-color: var(--tooltip-bg);
+                color: var(--tooltip-text);
+                font-size: 0.8125rem;
+                line-height: 1.4;
                 pointer-events: none;
-                z-index: 1000;
-                display: none;
-                font-size: 0.875em;
-                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+                box-shadow: var(--shadow);
+                translate: var(--tip-x, 0) var(--tip-y, 0);
             }
 
-            .tooltip-date {
-                font-weight: 600;
-                margin-bottom: 4px;
+            [hidden] {
+                display: none !important;
             }
 
-            .tooltip-hours {
-                color: #58a6ff;
-            }
+            /* Preferences and print ---------------------------------------- */
 
-            .loading {
-                text-align: center;
-                padding: 40px;
-                font-size: 1.2em;
-                color: #8b949e;
-            }
-
-            .error {
-                background-color: #f85149;
-                color: #fff;
-                padding: 20px;
-                border-radius: 6px;
-                margin: 20px 0;
-            }
-
-            /* Mobile Responsive Design - Tablet and below */
-            @media (max-width: 1024px) {
-                .container {
-                    max-width: 100%;
-                }
-
-                .stats-grid {
-                    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            @media (prefers-reduced-motion: reduce) {
+                *,
+                *::before,
+                *::after {
+                    animation-duration: 0.01ms !important;
+                    animation-iteration-count: 1 !important;
+                    transition-duration: 0.01ms !important;
+                    scroll-behavior: auto !important;
                 }
             }
 
-            /* Mobile Responsive Design - Small tablets and large phones */
-            @media (max-width: 768px) {
+            @media print {
+                :root {
+                    color-scheme: light;
+                    --bg: #ffffff;
+                    --surface: #ffffff;
+                    --text-strong: #000000;
+                    --text-muted: #444444;
+                    --accent: #000000;
+                }
+
                 body {
-                    padding: 15px;
+                    padding: 0;
                 }
 
-                header {
-                    margin-bottom: 30px;
+                .tooltip,
+                .status {
+                    display: none !important;
                 }
 
-                h1 {
-                    font-size: 2em;
+                .stat,
+                .year {
+                    break-inside: avoid;
                 }
 
-                .subtitle {
-                    font-size: 1em;
-                }
-
-                .stats-grid {
-                    gap: 15px;
-                    margin-bottom: 30px;
-                }
-
-                .stat-card {
-                    padding: 15px;
-                }
-
-                .stat-value {
-                    font-size: 1.5em;
-                }
-
-                .year-header {
-                    font-size: 1.3em;
-                }
-
-                .chart-container {
-                    padding: 15px;
-                    overflow-x: auto;
-                }
-
-                .chart-section {
-                    margin-top: 30px;
-                }
-
-                .year-section {
-                    margin-bottom: 30px;
-                }
-
-                .loading {
-                    padding: 30px;
-                    font-size: 1.1em;
-                }
-            }
-
-            /* Mobile Responsive Design - Phones */
-            @media (max-width: 640px) {
-                body {
-                    padding: 10px;
-                }
-
-                header {
-                    margin-bottom: 20px;
-                }
-
-                h1 {
-                    font-size: 1.75em;
-                }
-
-                .stats-grid {
-                    grid-template-columns: 1fr;
-                    gap: 12px;
-                    margin-bottom: 20px;
-                }
-
-                .stat-card {
-                    padding: 15px;
-                }
-
-                .stat-label {
-                    font-size: 0.8em;
-                }
-
-                .stat-value {
-                    font-size: 1.4em;
-                }
-
-                .stat-secondary {
-                    font-size: 0.85em;
-                }
-
-                .year-header {
-                    font-size: 1.2em;
-                    margin-bottom: 12px;
-                }
-
-                .chart-container {
-                    padding: 10px;
-                }
-
-                .chart-section {
-                    margin-top: 20px;
-                }
-
-                .year-section {
-                    margin-bottom: 25px;
-                }
-
-                .legend {
-                    font-size: 0.75em;
-                    gap: 6px;
-                    flex-wrap: wrap;
-                }
-
-                .legend-box {
-                    width: 10px;
-                    height: 10px;
-                }
-
-                .loading {
-                    padding: 20px;
-                    font-size: 1em;
-                }
-
-                .error {
-                    padding: 15px;
-                    font-size: 0.9em;
-                }
-            }
-
-            /* Mobile Responsive Design - Small phones */
-            @media (max-width: 480px) {
-                body {
-                    padding: 8px;
-                }
-
-                h1 {
-                    font-size: 1.5em;
-                }
-
-                .subtitle {
-                    font-size: 0.9em;
-                }
-
-                .stat-value {
-                    font-size: 1.3em;
-                }
-
-                .year-header {
-                    font-size: 1.1em;
-                }
-            }
-
-            /* Landscape orientation on mobile */
-            @media (max-width: 768px) and (orientation: landscape) {
-                .stats-grid {
-                    grid-template-columns: repeat(2, 1fr);
+                .year__chart {
+                    overflow: visible;
                 }
             }
         </style>
     </head>
+
     <body>
-        <div class="container">
+        <main class="page">
             <header>
                 <h1>RV-10 Build Progress</h1>
+                <p id="status" class="status" role="status" aria-live="polite">
+                    Loading build progress&hellip;
+                </p>
             </header>
 
-            <div id="stats-container" class="stats-grid">
-                <div class="loading">Loading statistics...</div>
+            <noscript>
+                <p class="status" data-state="error">
+                    This dashboard needs JavaScript to read <code>progress.json</code>.
+                </p>
+            </noscript>
+
+            <section id="stats-section" aria-labelledby="stats-title" hidden>
+                <h2 id="stats-title" class="sr-only">Build statistics</h2>
+                <dl id="stats" class="stats"></dl>
+            </section>
+
+            <section id="activity-section" aria-labelledby="activity-title" hidden>
+                <div class="section-head">
+                    <h2 id="activity-title">Daily activity</h2>
+                    <p class="legend">
+                        <span>Less</span>
+                        <span class="legend__scale" aria-hidden="true">
+                            <span class="legend__swatch"></span>
+                            <span class="legend__swatch" data-level="1"></span>
+                            <span class="legend__swatch" data-level="2"></span>
+                            <span class="legend__swatch" data-level="3"></span>
+                            <span class="legend__swatch" data-level="4"></span>
+                        </span>
+                        <span>More</span>
+                    </p>
+                </div>
+                <div id="years" class="years"></div>
+            </section>
+        </main>
+
+        <div id="tooltip" class="tooltip" role="tooltip" hidden></div>
+
+        <template id="tpl-stat">
+            <div class="stat">
+                <dt class="stat__label"></dt>
+                <dd class="stat__body"><span class="stat__value"></span></dd>
             </div>
+        </template>
 
-            <div id="chart-container" class="chart-section">
-                <div class="loading">Loading build progress chart...</div>
-            </div>
-        </div>
+        <template id="tpl-year">
+            <section class="year">
+                <h3 class="year__title"></h3>
+                <div class="year__chart"></div>
+            </section>
+        </template>
 
-        <div id="tooltip" class="tooltip"></div>
+        <script type="module">
+            const CONFIG = Object.freeze({
+                dataUrl: 'progress.json',
+                goalHours: 2500,
+                refreshMs: 15 * 60 * 1000,
+                requestTimeoutMs: 15_000,
+            });
 
-        <!-- Cal-Heatmap JavaScript (v4) - CDN installation per official docs -->
-        <script src="https://d3js.org/d3.v7.min.js"></script>
-        <script src="https://unpkg.com/cal-heatmap/dist/cal-heatmap.min.js"></script>
-        <script src="https://unpkg.com/@popperjs/core@2"></script>
-        <script src="https://unpkg.com/cal-heatmap/dist/plugins/Tooltip.min.js"></script>
-        <script src="https://unpkg.com/cal-heatmap/dist/plugins/CalendarLabel.min.js"></script>
+            /* Heatmap geometry, in SVG user units. The SVG is drawn once at this
+               size and then scaled by the viewBox, so these are "design" pixels. */
+            const CELL = 18;
+            const GUTTER = 6;
+            const PITCH = CELL + GUTTER;
+            const WEEKDAY_GUTTER = 32; // room for "Mon" / "Wed" / "Fri"
+            const MONTH_GUTTER = 20; // room for the month row
+            const LABELLED_ROWS = [1, 3, 5]; // Mon, Wed, Fri
+            const MIN_SCALE = 0.62; // scroll rather than shrink past ~11px cells
 
-        <script>
-            const DATA_FILE = 'progress.json';
+            /* Hours >= cutoff[i] bumps a cell one colour step: five levels, four
+               cutoffs. 6+ hours all render at the brightest step. */
+            const LEVEL_CUTOFFS = [0.1, 2, 4, 6];
 
-            console.log('Modules loaded successfully');
+            const DAY_MS = 86_400_000;
+            const SVG_NS = 'http://www.w3.org/2000/svg';
 
-            // Helper function to hide cells outside year boundaries after rendering
-            function hideOutOfYearCells(year) {
-                // Use UTC to match how Cal-Heatmap parses ISO date strings
-                const yearStart = Date.UTC(year, 0, 1);
-                const yearEnd = Date.UTC(year, 11, 31, 23, 59, 59, 999);
+            /* Intl formatters are expensive to construct; build them once. All the
+               date formatters pin UTC so an ISO date never drifts a day west of
+               Greenwich. */
+            const fmt = {
+                hours: new Intl.NumberFormat('en-US', {
+                    minimumFractionDigits: 1,
+                    maximumFractionDigits: 1,
+                }),
+                loose: new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 }),
+                integer: new Intl.NumberFormat('en-US'),
+                shortDate: new Intl.DateTimeFormat('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    timeZone: 'UTC',
+                }),
+                longDate: new Intl.DateTimeFormat('en-US', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    timeZone: 'UTC',
+                }),
+                month: new Intl.DateTimeFormat('en-US', { month: 'short', timeZone: 'UTC' }),
+                weekday: new Intl.DateTimeFormat('en-US', { weekday: 'short', timeZone: 'UTC' }),
+                clock: new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit' }),
+            };
 
-                // Wait for rendering to complete
-                setTimeout(() => {
-                    const container = document.getElementById(`cal-heatmap-${year}`);
-                    if (!container) return;
+            const el = {
+                status: document.getElementById('status'),
+                stats: document.getElementById('stats'),
+                statsSection: document.getElementById('stats-section'),
+                activitySection: document.getElementById('activity-section'),
+                years: document.getElementById('years'),
+                tooltip: document.getElementById('tooltip'),
+                statTemplate: document.getElementById('tpl-stat'),
+                yearTemplate: document.getElementById('tpl-year'),
+            };
 
-                    // Find all subdomain cells (day cells)
-                    const cells = container.querySelectorAll('.ch-subdomain-bg');
-                    if (!cells || cells.length === 0) return;
+            /* -- helpers -------------------------------------------------- */
 
-                    cells.forEach((cell) => {
-                        const parent = cell.parentElement;
+            /** Parse `YYYY-MM-DD` at UTC midnight. `new Date('2028-02-25')` is also
+             *  UTC, but formatting it without a timeZone renders the previous day
+             *  for anyone west of UTC — pinning both ends avoids that. */
+            const parseIsoDate = (iso) => new Date(`${iso}T00:00:00Z`);
 
-                        // Get timestamp from D3 data (Cal-Heatmap uses D3 internally)
-                        let timestamp = null;
-                        if (cell.__data__ && cell.__data__.t) {
-                            timestamp = cell.__data__.t;
-                        } else if (parent && parent.__data__ && parent.__data__.t) {
-                            timestamp = parent.__data__.t;
-                        }
+            const toIsoDate = (timestamp) => new Date(timestamp).toISOString().slice(0, 10);
 
-                        if (!timestamp) return;
+            const startOfUtcDay = (date) =>
+                Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
 
-                        // Hide cells outside the year range, unhide cells within range
-                        const isOutOfRange = timestamp < yearStart || timestamp > yearEnd;
-                        const visibility = isOutOfRange ? 'hidden' : 'visible';
-                        const pointerEvents = isOutOfRange ? 'none' : 'auto';
+            const plural = (count, word) => `${word}${count === 1 ? '' : 's'}`;
 
-                        if (parent) {
-                            parent.style.visibility = visibility;
-                            parent.style.pointerEvents = pointerEvents;
-                        }
-                        cell.style.visibility = visibility;
-                        cell.style.pointerEvents = pointerEvents;
-                    });
-                }, 100);
+            const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+
+            const levelFor = (hours) =>
+                LEVEL_CUTOFFS.reduce((level, cutoff) => (hours >= cutoff ? level + 1 : level), 0);
+
+            const svg = (name, attributes) => {
+                const node = document.createElementNS(SVG_NS, name);
+                for (const [key, value] of Object.entries(attributes)) {
+                    node.setAttribute(key, value);
+                }
+                return node;
+            };
+
+            /* -- statistics ------------------------------------------------ */
+
+            /* Declarative card definitions: adding a metric means adding a row,
+               not another block of markup. */
+            const STAT_CARDS = [
+                {
+                    label: 'Total Hours',
+                    value: (s) => fmt.hours.format(s.total_hours),
+                    notes: (s) => [
+                        `${((s.total_hours / CONFIG.goalHours) * 100).toFixed(1)}% of ${fmt.integer.format(CONFIG.goalHours)} hour goal`,
+                        `${fmt.hours.format(Math.max(0, CONFIG.goalHours - s.total_hours))} hours remaining`,
+                    ],
+                },
+                {
+                    label: 'Days Worked',
+                    value: (s) => fmt.integer.format(s.days_worked),
+                },
+                {
+                    label: 'Average Per Week',
+                    value: (s) => fmt.hours.format(s.avg_hours_per_week),
+                    notes: (s) => [
+                        `Last 6 weeks: ${fmt.hours.format(s.avg_hours_last_6_weeks)} hrs/week`,
+                    ],
+                },
+                {
+                    label: 'Current Week',
+                    value: (s) => fmt.hours.format(s.hours_current_week),
+                    notes: (s) => [
+                        `Month: ${fmt.hours.format(s.hours_current_month)} hrs`,
+                        `Last 30 days: ${fmt.hours.format(s.hours_last_30_days)} hrs`,
+                    ],
+                },
+                {
+                    label: 'Est. Completion',
+                    value: (s) => fmt.shortDate.format(parseIsoDate(s.est_completion_date)),
+                    notes: () => ['Based on overall average'],
+                },
+                {
+                    label: 'Est. Completion (6-week trend)',
+                    value: (s) => fmt.shortDate.format(parseIsoDate(s.est_completion_date_6_weeks)),
+                    notes: () => ['Based on recent pace'],
+                },
+                {
+                    label: 'Current Streak',
+                    value: (s) => fmt.integer.format(s.current_streak),
+                    notes: (s) => [`${plural(s.current_streak, 'day')} worked consecutively`],
+                },
+                {
+                    label: 'Record Streak',
+                    value: (s) => fmt.integer.format(s.record_streak.days),
+                    notes: (s) => [
+                        `${plural(s.record_streak.days, 'day')} starting ${fmt.shortDate.format(
+                            parseIsoDate(s.record_streak.start_date)
+                        )}`,
+                    ],
+                },
+            ];
+
+            function renderStatistics(statistics) {
+                const fragment = document.createDocumentFragment();
+
+                for (const card of STAT_CARDS) {
+                    const node = el.statTemplate.content.cloneNode(true);
+                    node.querySelector('.stat__label').textContent = card.label;
+                    node.querySelector('.stat__value').textContent = card.value(statistics);
+
+                    const body = node.querySelector('.stat__body');
+                    for (const note of card.notes?.(statistics) ?? []) {
+                        const span = document.createElement('span');
+                        span.className = 'stat__note';
+                        span.textContent = note;
+                        body.append(span);
+                    }
+
+                    fragment.append(node);
+                }
+
+                el.stats.replaceChildren(fragment);
             }
 
-            function renderStatistics(stats) {
-                const container = document.getElementById('stats-container');
+            /* -- heatmap --------------------------------------------------- */
 
-                const percentComplete = ((stats.total_hours / 2500) * 100).toFixed(1);
-                const remainingHours = (2500 - stats.total_hours).toFixed(1);
+            /** Group the flat log into `year -> Map(isoDate -> hours)`. */
+            function groupByYear(log) {
+                const years = new Map();
 
-                container.innerHTML = `
-                <div class="stat-card">
-                    <div class="stat-label">Total Hours</div>
-                    <div class="stat-value">${stats.total_hours.toFixed(1)}</div>
-                    <div class="stat-secondary">${percentComplete}% of 2,500 hour goal</div>
-                    <div class="stat-secondary">${remainingHours} hours remaining</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Days Worked</div>
-                    <div class="stat-value">${stats.days_worked}</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Average Per Week</div>
-                    <div class="stat-value">${stats.avg_hours_per_week.toFixed(1)}</div>
-                    <div class="stat-secondary">Last 6 weeks: ${stats.avg_hours_last_6_weeks.toFixed(1)} hrs/week</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Current Week</div>
-                    <div class="stat-value">${stats.hours_current_week.toFixed(1)}</div>
-                    <div class="stat-secondary">Month: ${stats.hours_current_month.toFixed(1)} hrs</div>
-                    <div class="stat-secondary">Last 30 days: ${stats.hours_last_30_days.toFixed(1)} hrs</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Est. Completion</div>
-                    <div class="stat-value">${new Date(stats.est_completion_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</div>
-                    <div class="stat-secondary">Based on overall average</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Est. Completion (6-week trend)</div>
-                    <div class="stat-value">${new Date(stats.est_completion_date_6_weeks).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</div>
-                    <div class="stat-secondary">Based on recent pace</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Current Streak</div>
-                    <div class="stat-value">${stats.current_streak}</div>
-                    <div class="stat-secondary">${stats.current_streak === 1 ? 'day' : 'days'} worked consecutively</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Record Streak</div>
-                    <div class="stat-value">${stats.record_streak.days}</div>
-                    <div class="stat-secondary">${stats.record_streak.days === 1 ? 'day' : 'days'} starting ${new Date(stats.record_streak.start_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</div>
-                </div>
-            `;
+                for (const entry of log) {
+                    const year = Number(entry.date.slice(0, 4));
+                    let days = years.get(year);
+                    if (!days) years.set(year, (days = new Map()));
+                    days.set(entry.date, Number(entry.hours) || 0);
+                }
+
+                return years;
+            }
+
+            /**
+             * Draw one year as a GitHub-style grid: a column per week, a row per
+             * weekday. Because the grid is generated from Jan 1 to Dec 31 directly,
+             * days from neighbouring years are never created in the first place.
+             */
+            function buildHeatmap(year, days) {
+                const yearStart = Date.UTC(year, 0, 1);
+                const today = startOfUtcDay(new Date());
+                // Don't draw days that haven't happened yet.
+                const yearEnd = clamp(today, yearStart, Date.UTC(year, 11, 31));
+                const startWeekday = new Date(yearStart).getUTCDay();
+                const dayCount = Math.round((yearEnd - yearStart) / DAY_MS) + 1;
+                const columns = Math.ceil((startWeekday + dayCount) / 7);
+
+                const width = WEEKDAY_GUTTER + columns * PITCH - GUTTER;
+                const height = MONTH_GUTTER + 7 * PITCH - GUTTER;
+
+                const chart = svg('svg', {
+                    class: 'heatmap',
+                    viewBox: `0 0 ${width} ${height}`,
+                    width,
+                    height,
+                    role: 'img',
+                    style: `max-inline-size:${width}px;min-inline-size:${Math.round(width * MIN_SCALE)}px`,
+                });
+
+                chart.append(
+                    buildMonthLabels(year, yearStart, yearEnd, startWeekday, columns),
+                    buildWeekdayLabels()
+                );
+
+                const cells = svg('g', {});
+                let totalHours = 0;
+                let daysWorked = 0;
+
+                for (let offset = 0; offset < dayCount; offset += 1) {
+                    const iso = toIsoDate(yearStart + offset * DAY_MS);
+                    const hours = days.get(iso) ?? 0;
+
+                    if (hours > 0) {
+                        totalHours += hours;
+                        daysWorked += 1;
+                    }
+
+                    cells.append(
+                        svg('rect', {
+                            class: 'day',
+                            x: WEEKDAY_GUTTER + Math.floor((startWeekday + offset) / 7) * PITCH,
+                            y: MONTH_GUTTER + ((startWeekday + offset) % 7) * PITCH,
+                            width: CELL,
+                            height: CELL,
+                            rx: 2,
+                            'data-level': levelFor(hours),
+                            'data-date': iso,
+                            'data-hours': hours,
+                        })
+                    );
+                }
+
+                chart.append(cells);
+                chart.setAttribute(
+                    'aria-label',
+                    `${year}: ${fmt.hours.format(totalHours)} hours across ${daysWorked} ${plural(daysWorked, 'day')}.`
+                );
+
+                return chart;
+            }
+
+            function buildMonthLabels(year, yearStart, yearEnd, startWeekday, columns) {
+                const group = svg('g', {});
+
+                for (let month = 0; month < 12; month += 1) {
+                    const first = Date.UTC(year, month, 1);
+                    if (first > yearEnd) break;
+
+                    const offset = Math.round((first - yearStart) / DAY_MS);
+                    const weekday = new Date(first).getUTCDay();
+                    // Anchor to the first whole week of the month so a label never
+                    // sits above a column that is mostly the previous month.
+                    const column =
+                        Math.floor((startWeekday + offset) / 7) + (weekday === 0 ? 0 : 1);
+                    if (column >= columns) break;
+
+                    const label = svg('text', {
+                        x: WEEKDAY_GUTTER + column * PITCH,
+                        y: MONTH_GUTTER - 8,
+                    });
+                    label.textContent = fmt.month.format(new Date(first));
+                    group.append(label);
+                }
+
+                return group;
+            }
+
+            function buildWeekdayLabels() {
+                const group = svg('g', {});
+                // 2024-01-07 was a Sunday, so +row lands on that row's weekday.
+                const sunday = Date.UTC(2024, 0, 7);
+
+                for (const row of LABELLED_ROWS) {
+                    const label = svg('text', {
+                        x: 0,
+                        y: MONTH_GUTTER + row * PITCH + CELL / 2,
+                        'dominant-baseline': 'central',
+                    });
+                    label.textContent = fmt.weekday.format(new Date(sunday + row * DAY_MS));
+                    group.append(label);
+                }
+
+                return group;
             }
 
             function renderChart(log) {
-                // Group log entries by year
-                const logByYear = {};
-                log.forEach((entry) => {
-                    const year = entry.date.substring(0, 4);
-                    if (!logByYear[year]) {
-                        logByYear[year] = [];
-                    }
-                    logByYear[year].push(entry);
-                });
+                const years = groupByYear(log);
+                const fragment = document.createDocumentFragment();
 
-                const container = document.getElementById('chart-container');
-                container.innerHTML = '';
+                for (const year of [...years.keys()].sort((a, b) => b - a)) {
+                    const node = el.yearTemplate.content.cloneNode(true);
+                    node.querySelector('.year__title').textContent = year;
+                    node.querySelector('.year__chart').append(buildHeatmap(year, years.get(year)));
+                    fragment.append(node);
+                }
 
-                // Add legend once at the top
-                const legend = document.createElement('div');
-                legend.className = 'legend';
-                legend.style.marginBottom = '20px';
-                legend.innerHTML = `
-                    <span>Less</span>
-                    <div class="legend-scale">
-                        <div class="legend-box level-0"></div>
-                        <div class="legend-box level-1"></div>
-                        <div class="legend-box level-2"></div>
-                        <div class="legend-box level-3"></div>
-                        <div class="legend-box level-4"></div>
-                    </div>
-                    <span>More</span>
-                `;
-                container.appendChild(legend);
-
-                // Render each year (newest first)
-                Object.keys(logByYear)
-                    .sort()
-                    .reverse()
-                    .forEach((year) => {
-                        const yearSection = document.createElement('div');
-                        yearSection.className = 'year-section';
-
-                        const yearHeader = document.createElement('div');
-                        yearHeader.className = 'year-header';
-                        yearHeader.textContent = year;
-
-                        const chartContainer = document.createElement('div');
-                        chartContainer.className = 'chart-container';
-                        chartContainer.id = `cal-heatmap-${year}`;
-
-                        yearSection.appendChild(yearHeader);
-                        yearSection.appendChild(chartContainer);
-                        container.appendChild(yearSection);
-
-                        // Initialize cal-heatmap for this year (GitHub style)
-                        const cal = new CalHeatmap();
-
-                        cal.paint(
-                            {
-                                itemSelector: `#cal-heatmap-${year}`,
-                                data: {
-                                    source: logByYear[year],
-                                    x: 'date',
-                                    y: 'hours',
-                                    defaultValue: 0,
-                                },
-                                date: {
-                                    start: new Date(parseInt(year), 0, 1),
-                                },
-                                range: 13,
-                                scale: {
-                                    color: {
-                                        type: 'threshold',
-                                        range: [
-                                            '#30363d',
-                                            '#0e4429',
-                                            '#006d32',
-                                            '#26a641',
-                                            '#39d353',
-                                        ],
-                                        domain: [0.1, 2, 4, 6, 8],
-                                    },
-                                },
-                                domain: {
-                                    type: 'month',
-                                    gutter: 6,
-                                    label: { text: 'MMM', textAlign: 'start', position: 'top' },
-                                },
-                                subDomain: {
-                                    type: 'ghDay',
-                                    radius: 2,
-                                    width: 18,
-                                    height: 18,
-                                    gutter: 6,
-                                },
-                            },
-                            [
-                                [
-                                    Tooltip,
-                                    {
-                                        text: function (date, value, dayjsDate) {
-                                            return (
-                                                (value
-                                                    ? value + (value === 1 ? ' hour' : ' hours')
-                                                    : '0 hours') +
-                                                ' on ' +
-                                                dayjsDate.format('dddd, MMMM D, YYYY')
-                                            );
-                                        },
-                                    },
-                                ],
-                                [
-                                    CalendarLabel,
-                                    {
-                                        width: 30,
-                                        textAlign: 'start',
-                                        text: () =>
-                                            dayjs
-                                                .weekdaysShort()
-                                                .map((d, i) => (i % 2 == 0 ? '' : d)),
-                                        padding: [25, 0, 0, 0],
-                                    },
-                                ],
-                            ]
-                        );
-
-                        // Hide cells outside the year boundaries
-                        hideOutOfYearCells(parseInt(year));
-                    });
+                el.years.replaceChildren(fragment);
             }
 
-            async function loadData() {
-                try {
-                    console.log('Loading data from', DATA_FILE);
-                    const response = await fetch(DATA_FILE);
-                    if (!response.ok) {
-                        throw new Error(`Failed to load ${DATA_FILE}: ${response.statusText}`);
-                    }
-                    const data = await response.json();
-                    console.log('Data loaded successfully', data);
+            /* -- tooltip --------------------------------------------------- */
 
+            /* One delegated listener for every cell in every year, attached once. */
+            function initTooltip() {
+                const hide = () => {
+                    el.tooltip.hidden = true;
+                };
+
+                el.years.addEventListener('pointerover', (event) => {
+                    const cell = event.target.closest?.('.day');
+                    if (cell) showTooltip(cell);
+                });
+
+                el.years.addEventListener('pointerout', (event) => {
+                    if (event.target.closest?.('.day')) hide();
+                });
+
+                el.years.addEventListener('scroll', hide, { capture: true, passive: true });
+                window.addEventListener('blur', hide);
+            }
+
+            function showTooltip(cell) {
+                const hours = Number(cell.dataset.hours);
+                el.tooltip.textContent = `${fmt.loose.format(hours)} ${plural(hours, 'hour')} on ${fmt.longDate.format(
+                    parseIsoDate(cell.dataset.date)
+                )}`;
+                el.tooltip.hidden = false;
+
+                // Measure only after the text is in place, or the width is stale.
+                const anchor = cell.getBoundingClientRect();
+                const tip = el.tooltip.getBoundingClientRect();
+                const x = clamp(
+                    anchor.left + anchor.width / 2 - tip.width / 2,
+                    8,
+                    window.innerWidth - tip.width - 8
+                );
+                const above = anchor.top - tip.height - 8;
+
+                el.tooltip.style.setProperty('--tip-x', `${Math.round(x)}px`);
+                el.tooltip.style.setProperty(
+                    '--tip-y',
+                    `${Math.round(above < 8 ? anchor.bottom + 8 : above)}px`
+                );
+            }
+
+            /* -- data ------------------------------------------------------ */
+
+            /** Sections stay hidden until a load succeeds, so a first-load failure
+             *  shows the banner alone rather than an empty legend and a blank grid. */
+            function showContent(visible) {
+                el.statsSection.hidden = !visible;
+                el.activitySection.hidden = !visible;
+            }
+
+            function setStatus(message, state = 'info') {
+                el.status.textContent = message;
+                el.status.dataset.state = state;
+            }
+
+            async function fetchProgress() {
+                const response = await fetch(CONFIG.dataUrl, {
+                    // A long-lived dashboard must not be served its own stale copy.
+                    cache: 'no-store',
+                    signal: AbortSignal.timeout(CONFIG.requestTimeoutMs),
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status} ${response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                if (!Array.isArray(data?.log) || !data?.statistics) {
+                    throw new Error('unexpected shape — expected { log: [], statistics: {} }');
+                }
+
+                return data;
+            }
+
+            function describeFreshness(log) {
+                const lastWorked = log.findLast((entry) => Number(entry.hours) > 0);
+                const updated = `Updated ${fmt.clock.format(new Date())}`;
+
+                return lastWorked
+                    ? `Last logged ${fmt.shortDate.format(parseIsoDate(lastWorked.date))} · ${updated}`
+                    : updated;
+            }
+
+            let hasRendered = false;
+
+            async function refresh() {
+                try {
+                    const data = await fetchProgress();
                     renderStatistics(data.statistics);
                     renderChart(data.log);
+                    hasRendered = true;
+                    showContent(true);
+                    setStatus(describeFreshness(data.log));
                 } catch (error) {
-                    console.error('Error loading data:', error);
-                    document.getElementById('stats-container').innerHTML = `
-                    <div class="error">
-                        <strong>Error:</strong> ${error.message}
-                    </div>
-                `;
-                    document.getElementById('chart-container').innerHTML = '';
+                    // Keep the last good render on screen; only the banner changes.
+                    showContent(hasRendered);
+                    setStatus(`Could not load ${CONFIG.dataUrl} — ${error.message}`, 'error');
                 }
             }
 
-            // Load data when page loads
-            try {
-                console.log('Starting to load data...');
-                loadData();
-            } catch (error) {
-                console.error('Error in main execution:', error);
+            /* A self-rescheduling timeout rather than setInterval: a slow fetch can
+               never overlap the next one, and a hidden tab does no work at all. */
+            let refreshTimer = null;
+
+            function scheduleRefresh() {
+                clearTimeout(refreshTimer);
+                refreshTimer = setTimeout(async () => {
+                    await refresh();
+                    scheduleRefresh();
+                }, CONFIG.refreshMs);
             }
 
-            // Auto-refresh data every 15 minutes (900000 milliseconds)
-            setInterval(
-                () => {
-                    console.log('Auto-refreshing data...');
-                    loadData();
-                },
-                15 * 60 * 1000
-            );
+            document.addEventListener('visibilitychange', async () => {
+                if (document.visibilityState === 'hidden') {
+                    clearTimeout(refreshTimer);
+                    return;
+                }
+                await refresh();
+                scheduleRefresh();
+            });
+
+            initTooltip();
+            await refresh();
+            scheduleRefresh();
         </script>
     </body>
 </html>
