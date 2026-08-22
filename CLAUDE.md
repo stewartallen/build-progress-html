@@ -70,8 +70,9 @@ GitHub-style. Geometry is in SVG user units and scaled by the `viewBox`:
 - Month labels anchor to the first _whole_ week of each month
 - A full year is 1298×182 user units
 
-The grid is generated from Jan 1 to Dec 31 directly, so cells from neighbouring years
-are never created. Days in the future are not drawn.
+The grid always spans Jan 1 to Dec 31, so every year — including the current one —
+renders at the same full width, and cells from neighbouring years are never created.
+Days in the future (and any day missing from `log`) render as level 0.
 
 ### Colour scale
 

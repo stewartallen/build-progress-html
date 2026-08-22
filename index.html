@@ -493,9 +493,6 @@
 
             const toIsoDate = (timestamp) => new Date(timestamp).toISOString().slice(0, 10);
 
-            const startOfUtcDay = (date) =>
-                Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
-
             const plural = (count, word) => `${word}${count === 1 ? '' : 's'}`;
 
             const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
@@ -609,14 +606,14 @@
 
             /**
              * Draw one year as a GitHub-style grid: a column per week, a row per
-             * weekday. Because the grid is generated from Jan 1 to Dec 31 directly,
-             * days from neighbouring years are never created in the first place.
+             * weekday. The grid always spans Jan 1 to Dec 31, so the current year is
+             * as wide as any other and days that haven't happened yet simply render
+             * as level 0. Because it is generated from the year's own bounds, days
+             * from neighbouring years are never created in the first place.
              */
             function buildHeatmap(year, days) {
                 const yearStart = Date.UTC(year, 0, 1);
-                const today = startOfUtcDay(new Date());
-                // Don't draw days that haven't happened yet.
-                const yearEnd = clamp(today, yearStart, Date.UTC(year, 11, 31));
+                const yearEnd = Date.UTC(year, 11, 31);
                 const startWeekday = new Date(yearStart).getUTCDay();
                 const dayCount = Math.round((yearEnd - yearStart) / DAY_MS) + 1;
                 const columns = Math.ceil((startWeekday + dayCount) / 7);
@@ -634,7 +631,7 @@
                 });
 
                 chart.append(
-                    buildMonthLabels(year, yearStart, yearEnd, startWeekday, columns),
+                    buildMonthLabels(year, yearStart, startWeekday, columns),
                     buildWeekdayLabels()
                 );
 
@@ -675,13 +672,11 @@
                 return chart;
             }
 
-            function buildMonthLabels(year, yearStart, yearEnd, startWeekday, columns) {
+            function buildMonthLabels(year, yearStart, startWeekday, columns) {
                 const group = svg('g', {});
 
                 for (let month = 0; month < 12; month += 1) {
                     const first = Date.UTC(year, month, 1);
-                    if (first > yearEnd) break;
-
                     const offset = Math.round((first - yearStart) / DAY_MS);
                     const weekday = new Date(first).getUTCDay();
                     // Anchor to the first whole week of the month so a label never
